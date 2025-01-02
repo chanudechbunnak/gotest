@@ -13,6 +13,8 @@ func InetRoutes(app *fiber.App) {
 	v3 := api.Group("/v3")
 
 	v1.Get("/usersprofile", c.GetUsersProfiles)
+	v1.Get("/usersprofile/generations", c.GetGenerations)
+	v1.Get("usersprofile/search", c.GetUserProfile)
 
 	app.Use(basicauth.New(basicauth.Config{
 		Users: map[string]string{

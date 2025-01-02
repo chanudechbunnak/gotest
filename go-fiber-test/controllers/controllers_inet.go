@@ -322,6 +322,56 @@ func GetUsersProfiles(c *fiber.Ctx) error {
 	return c.Status(200).JSON(usersProfile)
 }
 
+func GetGenerations(c *fiber.Ctx) error {
+	db := database.DBConn
+	var usersProfile []m.UsersProfile
+	db.Find(&usersProfile)
+
+	var dataResults []m.GenRes
+	genZCount := 0
+	genYCount := 0
+	genXCount := 0
+	babyBoomerCount := 0
+	giGenerationCount := 0
+
+	for _, user := range usersProfile {
+		generation := ""
+		if user.Age < 24 {
+			generation = "GenZ"
+			genZCount++
+		} else if user.Age >= 24 && user.Age <= 41 {
+			generation = "GenY"
+			genYCount++
+		} else if user.Age >= 42 && user.Age <= 56 {
+			generation = "GenX"
+			genXCount++
+		} else if user.Age >= 57 && user.Age <= 75 {
+			generation = "Baby Boomer"
+			babyBoomerCount++
+		} else if user.Age > 75 {
+			generation = "G.I. Generation"
+			giGenerationCount++
+		}
+
+		genRes := m.GenRes{
+			Name:       user.Name,
+			Age:        user.Age,
+			Generation: generation,
+		}
+		dataResults = append(dataResults, genRes)
+	}
+
+	response := m.GenCount{
+		Data:         dataResults,
+		GenZ:         genZCount,
+		GenY:         genYCount,
+		GenX:         genXCount,
+		BabyBoomer:   babyBoomerCount,
+		GIGeneration: giGenerationCount,
+	}
+	return c.Status(200).JSON(response)
+}
+
 func AddUsersProfile(c *fiber.Ctx) error {
 	db := database.DBConn
 	var usersProfile m.UsersProfile
@@ -352,4 +402,17 @@ func RemoveUsersProfile(c *fiber.Ctx) error {
 		return c.SendStatus(404)
 	}
 	return c.SendStatus(200)
+}
+
+func GetUserProfile(c *fiber.Ctx) error {
+	db := database.DBConn
+	search := strings.TrimSpace(c.Query("search"))
+	var usersProfile []m.UsersProfile
+
+	result := db.Where("employee_id = ? OR name = ? OR lastname = ?",
+		search, search, search).Find(&usersProfile)
+	if result.RowsAffected == 0 {
+		return c.SendStatus(404)
+	}
+	return c.Status(200).JSON(usersProfile)
 }
